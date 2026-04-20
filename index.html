@@ -56,7 +56,7 @@
           <p class="muted small">
             请先在摊位与工作人员沟通并领取对应尺码的服装，再于下方选择你实际领取的尺码完成登记。登记编号便于现场核对与统计。
           </p>
-          <form id="form-size" class="form">
+          <form id="form-size" class="form" novalidate>
             <div class="field">
               <span>领取尺码</span>
               <div class="size-grid" id="size-grid"></div>
@@ -66,10 +66,17 @@
               <input name="shirtSizeOther" maxlength="24" placeholder="例如：加长款 M" />
             </label>
             <label class="check">
-              <input type="checkbox" name="clothingAcknowledged" id="clothing-ack" required />
+              <input type="checkbox" name="clothingAcknowledged" id="clothing-ack" />
               <span>我已与工作人员确认尺码，并已领取对应服装。</span>
             </label>
-            <button type="submit" class="btn primary wide">提交登记</button>
+            <button
+              type="button"
+              class="btn primary wide"
+              id="btn-submit-size"
+              onclick="if(window.__slbSubmitSize)window.__slbSubmitSize();"
+            >
+              提交登记
+            </button>
           </form>
           <p class="err" id="err-size" hidden></p>
         </section>

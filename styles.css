@@ -38,7 +38,8 @@ body {
   background-size: cover, auto, auto, auto, auto;
   background-position: center center, center, center, center, center;
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-  background-attachment: fixed, fixed, fixed, fixed, fixed;
+  /* fixed 在部分 iOS / 内置浏览器会导致触摸命中错位，按钮“点了没反应” */
+  background-attachment: scroll, scroll, scroll, scroll, scroll;
 }
 
 .mode-banner {
@@ -92,10 +93,12 @@ body::before {
 
 .page {
   position: relative;
-  z-index: 1;
+  z-index: 3;
+  isolation: isolate;
+  pointer-events: auto;
   max-width: 480px;
   margin: 0 auto;
-  padding: 20px 16px 32px;
+  padding: 20px 16px max(32px, env(safe-area-inset-bottom, 0px));
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -120,14 +123,20 @@ body::before {
 
 .main {
   flex: 1;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
 }
 
 .card {
+  position: relative;
+  z-index: 1;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px 16px;
   box-shadow: 0 12px 40px #00000055;
+  pointer-events: auto;
 }
 
 .card.inner {
@@ -240,6 +249,8 @@ body::before {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.15);
 }
 
 .btn:disabled {
@@ -254,6 +265,12 @@ body::before {
 
 .btn.wide {
   width: 100%;
+}
+
+/* 移动端 WebView：确保提交按钮在装饰层之上、可点区域不被吃掉 */
+#btn-submit-size {
+  position: relative;
+  z-index: 5;
 }
 
 .pickup {

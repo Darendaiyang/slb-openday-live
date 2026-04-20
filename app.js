@@ -4,6 +4,7 @@ import { matchJobsWithList, buildPersonalizedWish } from "./match.js";
 const CONSENT_VERSION = "SLB-OD-PORTRAIT-2026-live-v1";
 const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "XXXL", "OTHER"];
 const LS_COUNTER = "slb_live_reg_counter";
+let memRegCounter = 0;
 
 const $ = (id) => document.getElementById(id);
 
@@ -64,18 +65,46 @@ function showModeBanner() {
 }
 
 function nextLocalRegCode() {
-  let n = parseInt(localStorage.getItem(LS_COUNTER) || "0", 10);
+  let n = 0;
+  try {
+    n = parseInt(localStorage.getItem(LS_COUNTER) || "0", 10);
+  } catch {
+    n = memRegCounter;
+  }
   if (!Number.isFinite(n) || n < 0) n = 0;
   n += 1;
-  localStorage.setItem(LS_COUNTER, String(n));
+  memRegCounter = n;
+  try {
+    localStorage.setItem(LS_COUNTER, String(n));
+  } catch {
+    /* Teams / 隐私模式等可能禁用 localStorage */
+  }
   return `R-${String(n).padStart(3, "0")}`;
+}
+
+function createId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  const rand = Math.random().toString(36).slice(2, 10);
+  return `id-${Date.now()}-${rand}`;
+}
+
+function withTimeout(promise, ms, message) {
+  let timer = null;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message || "请求超时")), ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
 }
 
 async function submitCheckinCloud(finalSize) {
   const { doc, runTransaction, serverTimestamp } = await import(
     "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"
   );
-  const checkinId = crypto.randomUUID();
+  const checkinId = createId();
   const cRef = doc(state.db, "meta", "counter");
   const uRef = doc(state.db, "checkins", checkinId);
   let registrationCode = "";
@@ -100,9 +129,18 @@ async function submitCheckinCloud(finalSize) {
 }
 
 function submitCheckinLocal(finalSize) {
-  const checkinId = crypto.randomUUID();
+  const checkinId = createId();
   const registrationCode = nextLocalRegCode();
   return { id: checkinId, registrationCode, shirtSize: finalSize, name: state.name };
+}
+
+function switchToLocalMode(reason) {
+  state.useCloud = false;
+  state.db = null;
+  const b = $("mode-banner");
+  b.classList.remove("hidden");
+  b.className = "mode-banner warn";
+  b.textContent = `当前网络下云端写入不稳定，已自动切换为本机登记模式（${reason}）。如需全场连续编号，请切换网络后刷新重试。`;
 }
 
 async function saveProfileCloud(school, major, matches, wishMessage) {
@@ -172,18 +210,25 @@ function bindName() {
 }
 
 function bindSize() {
-  $("form-size").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  const form = $("form-size");
+  const submitBtn = $("btn-submit-size");
+  let sizeBusy = false;
+
+  async function runSizeSubmit() {
+    if (sizeBusy) return;
+    sizeBusy = true;
     setErr("err-size", "");
-    const fd = new FormData(e.target);
+    const fd = new FormData(form);
     const shirtSize = String(fd.get("shirtSize") || "").trim();
     const shirtSizeOther = String(fd.get("shirtSizeOther") || "").trim();
     if (!shirtSize) {
       setErr("err-size", "请选择领取尺码");
+      sizeBusy = false;
       return;
     }
     if (!$("clothing-ack").checked) {
       setErr("err-size", "请勾选确认已与工作人员确认并完成领衣");
+      sizeBusy = false;
       return;
     }
 
@@ -191,17 +236,22 @@ function bindSize() {
     if (shirtSize === "OTHER") {
       if (!shirtSizeOther) {
         setErr("err-size", "选择「其他」时请填写说明");
+        sizeBusy = false;
         return;
       }
       finalSize = `其他:${shirtSizeOther}`;
     }
 
-    const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     try {
       let data;
       if (state.useCloud) {
-        data = await submitCheckinCloud(finalSize);
+        try {
+          data = await withTimeout(submitCheckinCloud(finalSize), 8000, "云端提交超时");
+        } catch (cloudErr) {
+          switchToLocalMode(cloudErr.message || "云端不可用");
+          data = submitCheckinLocal(finalSize);
+        }
       } else {
         data = submitCheckinLocal(finalSize);
       }
@@ -222,7 +272,20 @@ function bindSize() {
       setErr("err-size", err.message || String(err));
     } finally {
       submitBtn.disabled = false;
+      sizeBusy = false;
     }
+  }
+
+  window.__slbSubmitSize = function () {
+    void runSizeSubmit();
+  };
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+  });
+  /* 主入口：内联 onclick（index.html）+ 这里兜底，避免部分 WebView 不触发绑定 */
+  submitBtn.addEventListener("click", () => {
+    void runSizeSubmit();
   });
 }
 
@@ -241,10 +304,12 @@ function bindProfile() {
       setErr("err-profile", "会话失效，请刷新页面重新开始");
       return;
     }
-    const fd = new FormData(e.target);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     const school = String(fd.get("school") || "").trim();
     const major = String(fd.get("major") || "").trim();
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
     submitBtn.disabled = true;
     try {
       const matches = matchJobsWithList(state.jobsList, school, major, 3);
@@ -306,10 +371,21 @@ function initFooter() {
 function initCustomBackground() {
   const key = "slb_custom_bg_image";
   const bg = new URLSearchParams(window.location.search).get("bg");
-  if (bg) {
-    localStorage.setItem(key, bg);
+  try {
+    if (bg) {
+      localStorage.setItem(key, bg);
+    }
+  } catch {
+    /* ignore */
   }
-  const finalBg = bg || localStorage.getItem(key) || "";
+  let finalBg = bg || "";
+  if (!finalBg) {
+    try {
+      finalBg = localStorage.getItem(key) || "";
+    } catch {
+      finalBg = "";
+    }
+  }
   if (!finalBg) return;
   document.documentElement.style.setProperty("--custom-bg-image", `url("${finalBg}")`);
 }
