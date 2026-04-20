@@ -1,0 +1,372 @@
+/* SLB 风格：主色接近品牌深蓝 #003366，辅以能源科技感的青色高光（非官方素材，仅配色参考） */
+:root {
+  --slb-navy: #003366;
+  --slb-navy-deep: #001a33;
+  --slb-navy-mid: #002244;
+  --slb-accent: #00a8cc;
+  --slb-accent-soft: rgba(0, 168, 204, 0.35);
+  --bg: var(--slb-navy-deep);
+  --card: rgba(10, 28, 48, 0.92);
+  --border: rgba(0, 168, 204, 0.22);
+  --text: #e8f0f7;
+  --muted: #94a8bc;
+  --accent: #5dd4f0;
+  --accent-dim: #0099c0;
+  --err: #f87171;
+  --radius: 14px;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--text);
+  background-color: var(--slb-navy-deep);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -30%, rgba(0, 51, 102, 0.85), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 20%, rgba(0, 168, 204, 0.12), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(0, 80, 120, 0.25), transparent 45%),
+    linear-gradient(168deg, var(--slb-navy-deep) 0%, var(--slb-navy-mid) 42%, #001428 100%);
+  background-attachment: fixed;
+}
+
+.mode-banner {
+  position: relative;
+  z-index: 2;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 12px 16px 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.mode-banner.warn {
+  background: #422006;
+  border: 1px solid #78350f;
+  color: #fde68a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 12px 16px 0;
+}
+.mode-banner.ok {
+  background: #0c4a6e;
+  border: 1px solid #0369a1;
+  color: #bae6fd;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 12px 16px 0;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.45;
+  background-image: repeating-linear-gradient(
+      118deg,
+      transparent,
+      transparent 14px,
+      rgba(255, 255, 255, 0.018) 14px,
+      rgba(255, 255, 255, 0.018) 15px
+    ),
+    repeating-linear-gradient(
+      -12deg,
+      transparent,
+      transparent 120px,
+      rgba(0, 168, 204, 0.04) 120px,
+      rgba(0, 168, 204, 0.04) 121px
+    );
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px 32px;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-size: 1.25rem;
+}
+
+.tagline {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.main {
+  flex: 1;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  box-shadow: 0 12px 40px #00000055;
+}
+
+.card.inner {
+  background: #0f172a;
+  border-color: #334155;
+  margin-top: 14px;
+}
+
+.modal {
+  position: relative;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.title {
+  font-size: 1.15rem;
+  margin: 0 0 10px;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+  color: var(--accent);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.tiny {
+  font-size: 0.75rem;
+}
+
+.center {
+  text-align: center;
+}
+
+.scroll-box {
+  max-height: 140px;
+  overflow: auto;
+  padding: 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 12px 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #d1d5db;
+}
+
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.check input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.actions {
+  margin-top: 14px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.field input {
+  padding: 12px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0b1224;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.field input:focus {
+  outline: 2px solid var(--accent-dim);
+  border-color: transparent;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #06b6d4, #2563eb);
+  color: #f8fafc;
+}
+
+.btn.wide {
+  width: 100%;
+}
+
+.pickup {
+  text-align: center;
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin: 16px 0 18px;
+  color: var(--accent);
+  text-shadow: 0 0 24px #22d3ee44;
+}
+
+.size-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.size-option {
+  position: relative;
+}
+
+.size-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.size-option span {
+  display: block;
+  text-align: center;
+  padding: 10px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0b1224;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.size-option input:focus-visible + span {
+  outline: 2px solid var(--accent-dim);
+}
+
+.size-option input:checked + span {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  color: var(--accent);
+}
+
+.size-other {
+  margin-top: 10px;
+}
+
+.success-summary {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  background: #0b1224;
+  margin: 12px 0 16px;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.success-summary strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.err {
+  color: var(--err);
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.job-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.job {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: #0b1224;
+}
+
+.job h4 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.job-meta {
+  font-size: 0.8rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.job p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+#wish-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.footer {
+  margin-top: 18px;
+  text-align: center;
+  word-break: break-all;
+}

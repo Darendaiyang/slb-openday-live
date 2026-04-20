@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>SLB Open Day 现场签到</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="mode-banner" class="mode-banner hidden"></div>
+    <div class="page">
+      <header class="header">
+        <div class="brand">SLB Open Day</div>
+        <p class="tagline">现场签到 · 服装尺码登记 · 岗位灵感</p>
+        <p class="muted tiny" style="margin-top: 6px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85">
+          Energy forward
+        </p>
+      </header>
+
+      <main class="main">
+        <section id="modal-consent" class="card modal" aria-modal="true" role="dialog">
+          <h1 class="title">肖像及影像使用授权</h1>
+          <p class="muted small">
+            参加活动即可能被摄影、摄像。若你同意主办方将相关素材用于宣传推广（如官网、社交媒体、活动回顾等），请勾选并继续；不同意将无法使用本线上签到。
+          </p>
+          <div class="scroll-box">
+            <p>
+              本人理解活动现场可能拍摄含本人肖像、形象或声音之影像，并同意主办方在合法合规前提下，将该等素材用于与本次活动及雇主品牌相关的宣传用途。具体权利义务以主办方公示的完整协议为准。
+            </p>
+          </div>
+          <label class="check">
+            <input type="checkbox" id="consent-check" />
+            <span>本人已阅读并同意上述授权说明，自愿继续签到流程。</span>
+          </label>
+          <div class="actions">
+            <button type="button" class="btn primary" id="consent-agree" disabled>同意并继续</button>
+          </div>
+          <p class="muted tiny center">协议版本：<span id="consent-version-label"></span></p>
+        </section>
+
+        <section id="step-name" class="card hidden">
+          <h2 class="title">签到</h2>
+          <p class="muted small">请输入与报名信息一致的姓名。</p>
+          <form id="form-name" class="form">
+            <label class="field">
+              <span>姓名</span>
+              <input name="name" autocomplete="name" required maxlength="40" placeholder="例如：张三" />
+            </label>
+            <button type="submit" class="btn primary wide">下一步</button>
+          </form>
+          <p class="err" id="err-name" hidden></p>
+        </section>
+
+        <section id="step-size" class="card hidden">
+          <h2 class="title">服装尺码登记</h2>
+          <p class="muted small">
+            请先在摊位与工作人员沟通并领取对应尺码的服装，再于下方选择你实际领取的尺码完成登记。登记编号便于现场核对与统计。
+          </p>
+          <form id="form-size" class="form">
+            <div class="field">
+              <span>领取尺码</span>
+              <div class="size-grid" id="size-grid"></div>
+            </div>
+            <label class="field size-other hidden" id="wrap-size-other">
+              <span>其他说明（必填）</span>
+              <input name="shirtSizeOther" maxlength="24" placeholder="例如：加长款 M" />
+            </label>
+            <label class="check">
+              <input type="checkbox" name="clothingAcknowledged" id="clothing-ack" required />
+              <span>我已与工作人员确认尺码，并已领取对应服装。</span>
+            </label>
+            <button type="submit" class="btn primary wide">提交登记</button>
+          </form>
+          <p class="err" id="err-size" hidden></p>
+        </section>
+
+        <section id="step-success" class="card hidden">
+          <h2 class="title">登记成功</h2>
+          <p class="muted small">请保留本页信息，必要时可向工作人员出示。</p>
+          <div class="success-summary" id="success-summary"></div>
+          <div class="pickup" id="reg-code-display">—</div>
+          <button type="button" class="btn primary wide" id="btn-to-profile">填写学校 / 专业，获取岗位推荐与寄语</button>
+        </section>
+
+        <section id="step-profile" class="card hidden">
+          <h2 class="title">学校与专业</h2>
+          <p class="muted small">用于岗位关键词匹配；寄语将结合你的背景生成。</p>
+          <form id="form-profile" class="form">
+            <label class="field">
+              <span>学校</span>
+              <input name="school" required maxlength="80" placeholder="例如：某某大学" />
+            </label>
+            <label class="field">
+              <span>专业</span>
+              <input name="major" required maxlength="80" placeholder="例如：石油工程" />
+            </label>
+            <button type="submit" class="btn primary wide">获取推荐与寄语</button>
+          </form>
+          <p class="err" id="err-profile" hidden></p>
+        </section>
+
+        <section id="step-result" class="card hidden">
+          <h2 class="title">为你匹配的岗位灵感</h2>
+          <p class="muted small" id="result-source"></p>
+          <div id="job-list" class="job-list"></div>
+          <div class="wish card inner">
+            <h3 class="subtitle">寄语</h3>
+            <p id="wish-text"></p>
+          </div>
+          <p class="muted tiny">你可以截图保存本页。感谢参与 Open Day！</p>
+        </section>
+      </main>
+
+      <footer class="footer muted tiny">
+        <span id="footer-url"></span>
+      </footer>
+    </div>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
