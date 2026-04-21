@@ -1,6 +1,4 @@
-﻿import { firebaseConfig, isFirebaseConfigured } from "../firebase-config.js";
-import { matchJobsWithList, buildPersonalizedWish } from "./match.js";
-
+﻿/* 不用顶部静态 import：任一文件 404 会导致整段脚本不执行，首屏协议版本空白、按钮永远灰 */
 const CONSENT_VERSION = "SLB-OD-PORTRAIT-2026-live-v1";
 const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "XXXL", "OTHER"];
 const LS_COUNTER = "slb_live_reg_counter";
@@ -34,20 +32,45 @@ function setErr(id, msg) {
 }
 
 async function loadJobs() {
-  const url = new URL("../jobs.json", import.meta.url);
-  const res = await fetch(url);
+  /* 相对当前页面路径；加超时避免弱网/拦截导致一直挂住 */
+  const res = await withTimeout(
+    fetch("./jobs.json", { cache: "no-store" }),
+    15000,
+    "jobs.json 加载超时"
+  );
   if (!res.ok) throw new Error("无法加载岗位库 jobs.json");
   state.jobsList = await res.json();
 }
 
 async function initFirebase() {
-  if (!isFirebaseConfigured()) {
+  var firebaseConfig;
+  var isFirebaseConfigured;
+  try {
+    var cfgMod = await import("../firebase-config.js");
+    firebaseConfig = cfgMod.firebaseConfig;
+    isFirebaseConfigured = cfgMod.isFirebaseConfigured;
+  } catch (_e) {
     return null;
   }
-  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
-  const { getFirestore } = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
-  const app = initializeApp(firebaseConfig);
-  return getFirestore(app);
+  if (!isFirebaseConfigured || !isFirebaseConfigured()) {
+    return null;
+  }
+  try {
+    return await withTimeout(
+      (async function () {
+        var firebaseApp = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
+        var firebaseFs = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
+        var initializeApp = firebaseApp.initializeApp;
+        var getFirestore = firebaseFs.getFirestore;
+        var app = initializeApp(firebaseConfig);
+        return getFirestore(app);
+      })(),
+      20000,
+      "Firebase SDK 加载超时"
+    );
+  } catch (_e) {
+    return null;
+  }
 }
 
 function showModeBanner() {
@@ -68,7 +91,7 @@ function nextLocalRegCode() {
   let n = 0;
   try {
     n = parseInt(localStorage.getItem(LS_COUNTER) || "0", 10);
-  } catch {
+  } catch (_e) {
     n = memRegCounter;
   }
   if (!Number.isFinite(n) || n < 0) n = 0;
@@ -76,7 +99,7 @@ function nextLocalRegCode() {
   memRegCounter = n;
   try {
     localStorage.setItem(LS_COUNTER, String(n));
-  } catch {
+  } catch (_e) {
     /* Teams / 隐私模式等可能禁用 localStorage */
   }
   return `R-${String(n).padStart(3, "0")}`;
@@ -92,12 +115,21 @@ function createId() {
 
 function withTimeout(promise, ms, message) {
   let timer = null;
-  const timeoutPromise = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(message || "请求超时")), ms);
+  const timeoutPromise = new Promise(function (_, reject) {
+    timer = setTimeout(function () {
+      reject(new Error(message || "请求超时"));
+    }, ms);
   });
-  return Promise.race([promise, timeoutPromise]).finally(() => {
-    if (timer) clearTimeout(timer);
-  });
+  return Promise.race([promise, timeoutPromise]).then(
+    function (result) {
+      if (timer) clearTimeout(timer);
+      return result;
+    },
+    function (err) {
+      if (timer) clearTimeout(timer);
+      throw err;
+    }
+  );
 }
 
 async function submitCheckinCloud(finalSize) {
@@ -312,6 +344,15 @@ function bindProfile() {
     if (!submitBtn) return;
     submitBtn.disabled = true;
     try {
+      var matchMod;
+      try {
+        matchMod = await import("./match.js");
+      } catch (importErr) {
+        setErr("err-profile", "岗位模块加载失败，请确认已部署 js/match.js 后刷新。");
+        return;
+      }
+      var matchJobsWithList = matchMod.matchJobsWithList;
+      var buildPersonalizedWish = matchMod.buildPersonalizedWish;
       const matches = matchJobsWithList(state.jobsList, school, major, 3);
       const wishMessage = buildPersonalizedWish({
         name: state.name,
@@ -375,14 +416,14 @@ function initCustomBackground() {
     if (bg) {
       localStorage.setItem(key, bg);
     }
-  } catch {
+  } catch (_e) {
     /* ignore */
   }
   let finalBg = bg || "";
   if (!finalBg) {
     try {
       finalBg = localStorage.getItem(key) || "";
-    } catch {
+    } catch (_e) {
       finalBg = "";
     }
   }
@@ -403,11 +444,11 @@ async function boot() {
   try {
     await loadJobs();
   } catch (e) {
+    state.jobsList = [];
     $("mode-banner").className = "mode-banner warn";
     $("mode-banner").classList.remove("hidden");
     $("mode-banner").textContent =
-      "无法加载 jobs.json，请确认通过 http 访问本目录（不要直接双击 file 打开）。";
-    return;
+      "无法加载 jobs.json，岗位推荐将不可用；签到与登记编号仍可继续。请用 https 打开并刷新重试。";
   }
 
   try {
@@ -416,10 +457,24 @@ async function boot() {
     state.db = null;
     $("mode-banner").className = "mode-banner warn";
     $("mode-banner").classList.remove("hidden");
-    $("mode-banner").textContent = `Firebase 初始化失败：${e.message || e}。将使用单机模式。`;
+    $("mode-banner").textContent = "Firebase 初始化失败：" + (e && e.message ? e.message : String(e)) + "。将使用单机模式。";
   }
   state.useCloud = Boolean(state.db);
   showModeBanner();
 }
 
-boot();
+function showBootError(err) {
+  var msg = err && err.message ? err.message : String(err);
+  var b = document.getElementById("mode-banner");
+  if (b) {
+    b.className = "mode-banner warn";
+    b.classList.remove("hidden");
+    b.textContent = "页面启动失败：" + msg + "。请换网络或用系统浏览器打开。";
+  } else {
+    alert("页面启动失败：" + msg);
+  }
+}
+
+void boot().catch(function (err) {
+  showBootError(err);
+});
